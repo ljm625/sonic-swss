@@ -20,6 +20,30 @@ extern sai_object_id_t      gSwitchId;
 extern PortsOrch*           gPortsOrch;
 extern bool                 gIsNatSupported;
 
+static const vector<sai_policer_stat_t> policerStatIds =
+{
+    SAI_POLICER_STAT_PACKETS,
+    SAI_POLICER_STAT_ATTR_BYTES,
+    /** Get/set green packet count [uint64_t] */
+    SAI_POLICER_STAT_GREEN_PACKETS,
+
+    /** Get/set green byte count [uint64_t] */
+    SAI_POLICER_STAT_GREEN_BYTES,
+
+    /** Get/set yellow packet count [uint64_t] */
+    SAI_POLICER_STAT_YELLOW_PACKETS,
+
+    /** Get/set yellow byte count [uint64_t] */
+    SAI_POLICER_STAT_YELLOW_BYTES,
+
+    /** Get/set red packet count [uint64_t] */
+    SAI_POLICER_STAT_RED_PACKETS,
+
+    /** Get/set red byte count [uint64_t] */
+    SAI_POLICER_STAT_RED_BYTES,
+};
+
+
 static map<string, sai_meter_type_t> policer_meter_map = {
     {"packets", SAI_METER_TYPE_PACKETS},
     {"bytes", SAI_METER_TYPE_BYTES}
@@ -95,8 +119,14 @@ const vector<sai_hostif_trap_type_t> default_trap_ids = {
 };
 
 CoppOrch::CoppOrch(vector<TableConnector> &tableConnectors) :
-    Orch( tableConnectors)
-{
+    Orch( tableConnectors),
+    m_flexCounterDb(new DBConnector("FLEX_COUNTER_DB", 0)),
+    m_flexCounterTable(new ProducerTable(m_flexCounterDb.get(), FLEX_COUNTER_TABLE)),
+    m_flexCounterGroupTable(new ProducerTable(m_flexCounterDb.get(), FLEX_COUNTER_GROUP_TABLE)),
+    m_countersDb(new DBConnector("COUNTERS_DB", 0)),
+    m_countersDbRedisClient(m_countersDb.get())
+
+    {
     SWSS_LOG_ENTER();
 
     initDefaultHostIntfTable();
@@ -164,6 +194,39 @@ void CoppOrch::initDefaultTrapIds()
 
     SWSS_LOG_INFO("Set attributes to default trap IDs");
 }
+
+
+void CoppOrch::generateCoppCounterIdList(void)
+{
+    // if (m_isPolicerCounterIdListGenerated)
+    // {
+    //     return;
+    // }
+
+    // Detokenize the SAI watermark stats to a string, separated by comma
+    string statList;
+    for (const auto &it : policerStatIds)
+    {
+        statList += (sai_serialize_policer_stat(it) + list_item_delimiter);
+    }
+    if (!statList.empty())
+    {
+        statList.pop_back();
+    }
+
+    // Push policer COUNTER_ID_LIST to FLEX_COUNTER_TABLE on a per policer basis
+    vector<FieldValueTuple> fvTuples;
+    fvTuples.emplace_back(POLICER_COUNTER_ID_LIST, statList);
+    bitMask = 1;
+    for (const auto &it : m_trap_group_policer_map)
+    {
+        string key = POLICER_COUNTER_FLEX_COUNTER_GROUP ":" + sai_serialize_object_id(it.second);
+        m_flexCounterTable->set(key, fvTuples);
+    }
+}
+
+
+
 
 void CoppOrch::initDefaultTrapGroup()
 {
@@ -622,6 +685,8 @@ task_process_status CoppOrch::processCoppRule(Consumer& consumer)
                         return task_process_status::task_failed;
                     }
                     SWSS_LOG_DEBUG("Created policer:%" PRIx64 " for existing trap group", policer_id);
+                    // Update COUNTER MAP to Redis
+                    m_countersDbRedisClient.hset(COUNTERS_COPP_NAME_MAP, trap_group_name, sai_serialize_object_id(m_trap_group_policer_map[m_trap_group_map[trap_group_name]]));
                 }
                 else
                 {
@@ -676,6 +741,9 @@ task_process_status CoppOrch::processCoppRule(Consumer& consumer)
                     return task_process_status::task_failed;
                 }
             }
+            // Update COUNTER MAP to Redis
+            m_countersDbRedisClient.hset(COUNTERS_COPP_NAME_MAP, trap_group_name, sai_serialize_object_id(m_trap_group_policer_map[m_trap_group_map[trap_group_name]]));
+
 
             if (!genetlink_attribs.empty())
             {
@@ -714,6 +782,9 @@ task_process_status CoppOrch::processCoppRule(Consumer& consumer)
             SWSS_LOG_ERROR("Failed to remove hostif from trap group %s", trap_group_name.c_str());
             return task_process_status::task_failed;
         }
+        // Update COUNTER MAP to Redis
+        m_countersDbRedisClient.hdel(COUNTERS_COPP_NAME_MAP, trap_group_name);
+
 
         /* Do not remove default trap group */
         if (trap_group_name == default_trap_group)

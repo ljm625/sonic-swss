@@ -8,6 +8,8 @@
 
 using namespace std;
 
+#define POLICER_COUNTER_FLEX_COUNTER_GROUP "POLICER_STAT_COUNTER"
+
 typedef map<string, sai_object_id_t> PolicerTable;
 typedef map<string, int> PolicerRefCountTable;
 

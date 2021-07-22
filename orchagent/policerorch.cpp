@@ -23,6 +23,32 @@ static const string green_packet_action_field  = "GREEN_PACKET_ACTION";
 static const string red_packet_action_field    = "RED_PACKET_ACTION";
 static const string yellow_packet_action_field = "YELLOW_PACKET_ACTION";
 
+#define POLICER_FLEX_STAT_COUNTER_POLL_MSECS  "1000"
+
+static const vector<sai_policer_stat_t> policerStatIds =
+{
+    SAI_POLICER_STAT_PACKETS,
+    SAI_POLICER_STAT_ATTR_BYTES,
+    /** Get/set green packet count [uint64_t] */
+    SAI_POLICER_STAT_GREEN_PACKETS,
+
+    /** Get/set green byte count [uint64_t] */
+    SAI_POLICER_STAT_GREEN_BYTES,
+
+    /** Get/set yellow packet count [uint64_t] */
+    SAI_POLICER_STAT_YELLOW_PACKETS,
+
+    /** Get/set yellow byte count [uint64_t] */
+    SAI_POLICER_STAT_YELLOW_BYTES,
+
+    /** Get/set red packet count [uint64_t] */
+    SAI_POLICER_STAT_RED_PACKETS,
+
+    /** Get/set red byte count [uint64_t] */
+    SAI_POLICER_STAT_RED_BYTES,
+};
+
+
 static const map<string, sai_meter_type_t> meter_type_map = {
     {"PACKETS", SAI_METER_TYPE_PACKETS},
     {"BYTES", SAI_METER_TYPE_BYTES}
@@ -106,10 +132,63 @@ bool PolicerOrch::decreaseRefCount(const string &name)
 }
 
 PolicerOrch::PolicerOrch(DBConnector* db, string tableName) :
-    Orch(db, tableName)
+    Orch(db, tableName),
+    m_flexCounterDb(new DBConnector("FLEX_COUNTER_DB", 0)),
+    m_flexCounterTable(new ProducerTable(m_flexCounterDb.get(), FLEX_COUNTER_TABLE)),
+    m_flexCounterGroupTable(new ProducerTable(m_flexCounterDb.get(), FLEX_COUNTER_GROUP_TABLE)),
+    m_countersDb(new DBConnector("COUNTERS_DB", 0)),
+    m_countersDbRedisClient(m_countersDb.get())
+
 {
     SWSS_LOG_ENTER();
+    initFlexCounterGroupTable();
 }
+
+void PolicerOrch::initFlexCounterGroupTable(void)
+{
+    try
+    {
+        vector<FieldValueTuple> fvTuples;
+        fvTuples.emplace_back(POLL_INTERVAL_FIELD, POLICER_FLEX_STAT_COUNTER_POLL_MSECS);
+
+        m_flexCounterGroupTable->set(POLICER_COUNTER_FLEX_COUNTER_GROUP, fvTuples);
+    }
+    catch (const runtime_error &e)
+    {
+        SWSS_LOG_ERROR("Policer flex counter group not set successfully. Runtime error: %s", e.what());
+    }
+}
+
+void PolicerOrch::generatePolicerCounterIdList(void)
+{
+    // if (m_isPolicerCounterIdListGenerated)
+    // {
+    //     return;
+    // }
+
+    // Detokenize the SAI watermark stats to a string, separated by comma
+    string statList;
+    for (const auto &it : policerStatIds)
+    {
+        statList += (sai_serialize_policer_stat(it) + list_item_delimiter);
+    }
+    if (!statList.empty())
+    {
+        statList.pop_back();
+    }
+
+    // Push policer COUNTER_ID_LIST to FLEX_COUNTER_TABLE on a per policer basis
+    vector<FieldValueTuple> fvTuples;
+    fvTuples.emplace_back(POLICER_COUNTER_ID_LIST, statList);
+    bitMask = 1;
+    for (const auto &it : m_syncdPolicers)
+    {
+        string key = POLICER_COUNTER_FLEX_COUNTER_GROUP ":" + sai_serialize_object_id(it.second);
+        m_flexCounterTable->set(key, fvTuples);
+    }
+}
+
+
 
 void PolicerOrch::doTask(Consumer &consumer)
 {
@@ -231,6 +310,10 @@ void PolicerOrch::doTask(Consumer &consumer)
                 SWSS_LOG_NOTICE("Created policer %s", key.c_str());
                 m_syncdPolicers[key] = policer_id;
                 m_policerRefCounts[key] = 0;
+
+                // Update COUNTER MAP to Redis
+                m_countersDbRedisClient.hset(COUNTERS_POLICER_NAME_MAP, key, sai_serialize_object_id(policer_id));
+
             }
             // Update an existing policer
             else
@@ -297,6 +380,8 @@ void PolicerOrch::doTask(Consumer &consumer)
             SWSS_LOG_NOTICE("Removed policer %s", key.c_str());
             m_syncdPolicers.erase(key);
             m_policerRefCounts.erase(key);
+            // Remove from counter map
+            m_countersDbRedisClient.hdel(COUNTERS_BUFFER_POOL_NAME_MAP, key);
             it = consumer.m_toSync.erase(it);
         }
     }

@@ -15,8 +15,13 @@ extern sai_port_api_t *sai_port_api;
 extern PortsOrch *gPortsOrch;
 extern IntfsOrch *gIntfsOrch;
 extern BufferOrch *gBufferOrch;
+extern CoppOrch *gCoppOrch;
+extern PolicerOrch *gPolicerOrch;
+
 
 #define BUFFER_POOL_WATERMARK_KEY   "BUFFER_POOL_WATERMARK"
+#define POLICER_KEY   "POLICER"
+
 
 unordered_map<string, string> flexCounterGroupMap =
 {
@@ -29,6 +34,7 @@ unordered_map<string, string> flexCounterGroupMap =
     {BUFFER_POOL_WATERMARK_KEY, BUFFER_POOL_WATERMARK_STAT_COUNTER_FLEX_COUNTER_GROUP},
     {"RIF", RIF_STAT_COUNTER_FLEX_COUNTER_GROUP},
     {"DEBUG_COUNTER", DEBUG_COUNTER_FLEX_COUNTER_GROUP},
+    {POLICER_KEY, POLICER_COUNTER_FLEX_COUNTER_GROUP}
 };
 
 
@@ -107,6 +113,14 @@ void FlexCounterOrch::doTask(Consumer &consumer)
                     {
                         gBufferOrch->generateBufferPoolWatermarkCounterIdList();
                     }
+
+                    // Install COUNTER_ID_LIST/ATTR_ID_LIST only when hearing policer enable event
+                    if ((key == POLICER_KEY) && (value == "enable"))
+                    {
+                        gCoppOrch->generateCoppCounterIdList();
+                        gPolicerOrch->generatePolicerCounterIdList();
+                    }
+
 
                     vector<FieldValueTuple> fieldValues;
                     fieldValues.emplace_back(FLEX_COUNTER_STATUS_FIELD, value);

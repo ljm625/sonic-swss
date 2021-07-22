@@ -10,6 +10,8 @@
 #include "redisapi.h"
 #include "redisclient.h"
 
+#define COPP_COUNTER_FLEX_COUNTER_GROUP "POLICER_STAT_COUNTER"
+
 
 // trap fields
 const std::string copp_trap_id_list                = "trap_ids";

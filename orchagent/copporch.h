@@ -4,6 +4,9 @@
 #include <map>
 #include <set>
 #include "orch.h"
+#include "redisapi.h"
+#include "redisclient.h"
+
 
 // trap fields
 const std::string copp_trap_id_list                = "trap_ids";
@@ -47,6 +50,8 @@ class CoppOrch : public Orch
 {
 public:
     CoppOrch(std::vector<TableConnector> &tableConnectors);
+    void generateCoppCounterIdList(void);
+
 protected:
     object_map m_trap_group_map;
     bool       enable_sflow_trap;
@@ -78,6 +83,14 @@ protected:
     void coppProcessSflow(Consumer& consumer);
 
     virtual void doTask(Consumer& consumer);
+private:
+    unique_ptr<DBConnector> m_flexCounterDb;
+    unique_ptr<ProducerTable> m_flexCounterGroupTable;
+    unique_ptr<ProducerTable> m_flexCounterTable;
+
+    unique_ptr<DBConnector> m_countersDb;
+    RedisClient m_countersDbRedisClient;
+
 };
 #endif /* SWSS_COPPORCH_H */
 

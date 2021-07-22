@@ -5,6 +5,8 @@
 
 #include "orch.h"
 #include "portsorch.h"
+#include "redisapi.h"
+#include "redisclient.h"
 
 using namespace std;
 
@@ -23,9 +25,19 @@ public:
 
     bool increaseRefCount(const string &name);
     bool decreaseRefCount(const string &name);
+    void generatePolicerCounterIdList(void);
+
 private:
     virtual void doTask(Consumer& consumer);
+    void initFlexCounterGroupTable(void);
 
     PolicerTable m_syncdPolicers;
     PolicerRefCountTable m_policerRefCounts;
+    unique_ptr<DBConnector> m_flexCounterDb;
+    unique_ptr<ProducerTable> m_flexCounterGroupTable;
+    unique_ptr<ProducerTable> m_flexCounterTable;
+
+    unique_ptr<DBConnector> m_countersDb;
+    RedisClient m_countersDbRedisClient;
+
 };

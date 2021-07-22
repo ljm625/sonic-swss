@@ -9,6 +9,9 @@
 #include "bufferorch.h"
 #include "flexcounterorch.h"
 #include "debugcounterorch.h"
+#include "policerorch.h"
+#include "copporch.h"
+
 
 extern sai_port_api_t *sai_port_api;
 

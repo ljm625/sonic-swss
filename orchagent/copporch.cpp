@@ -3,6 +3,7 @@
 #include "portsorch.h"
 #include "tokenize.h"
 #include "logger.h"
+#include "sai_serialize.h"
 
 #include <inttypes.h>
 #include <sstream>
@@ -217,10 +218,9 @@ void CoppOrch::generateCoppCounterIdList(void)
     // Push policer COUNTER_ID_LIST to FLEX_COUNTER_TABLE on a per policer basis
     vector<FieldValueTuple> fvTuples;
     fvTuples.emplace_back(POLICER_COUNTER_ID_LIST, statList);
-    bitMask = 1;
     for (const auto &it : m_trap_group_policer_map)
     {
-        string key = POLICER_COUNTER_FLEX_COUNTER_GROUP ":" + sai_serialize_object_id(it.second);
+        string key = COPP_COUNTER_FLEX_COUNTER_GROUP ":" + sai_serialize_object_id(it.second);
         m_flexCounterTable->set(key, fvTuples);
     }
 }

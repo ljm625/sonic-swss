@@ -1,9 +1,12 @@
 #ifndef SWSS_COPPORCH_H
 #define SWSS_COPPORCH_H
 
+#include <string>
 #include <map>
 #include <set>
+#include <unordered_map>
 #include "orch.h"
+#include "portsorch.h"
 #include "redisapi.h"
 #include "redisclient.h"
 

@@ -1,5 +1,6 @@
 #include "sai.h"
 #include "policerorch.h"
+#include "sai_serialize.h"
 
 #include "converter.h"
 #include <inttypes.h>
@@ -180,7 +181,6 @@ void PolicerOrch::generatePolicerCounterIdList(void)
     // Push policer COUNTER_ID_LIST to FLEX_COUNTER_TABLE on a per policer basis
     vector<FieldValueTuple> fvTuples;
     fvTuples.emplace_back(POLICER_COUNTER_ID_LIST, statList);
-    bitMask = 1;
     for (const auto &it : m_syncdPolicers)
     {
         string key = POLICER_COUNTER_FLEX_COUNTER_GROUP ":" + sai_serialize_object_id(it.second);

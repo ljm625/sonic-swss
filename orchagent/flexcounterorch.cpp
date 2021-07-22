@@ -18,8 +18,8 @@ extern sai_port_api_t *sai_port_api;
 extern PortsOrch *gPortsOrch;
 extern IntfsOrch *gIntfsOrch;
 extern BufferOrch *gBufferOrch;
-extern CoppOrch *copp_orch;
-extern PolicerOrch *policer_orch;
+extern CoppOrch *gCoppOrch;
+extern PolicerOrch *gPolicerOrch;
 
 
 #define BUFFER_POOL_WATERMARK_KEY   "BUFFER_POOL_WATERMARK"
@@ -120,8 +120,8 @@ void FlexCounterOrch::doTask(Consumer &consumer)
                     // Install COUNTER_ID_LIST/ATTR_ID_LIST only when hearing policer enable event
                     if ((key == POLICER_KEY) && (value == "enable"))
                     {
-                        copp_orch->generateCoppCounterIdList();
-                        policer_orch->generatePolicerCounterIdList();
+                        gCoppOrch->generateCoppCounterIdList();
+                        gPolicerOrch->generatePolicerCounterIdList();
                     }
 
 

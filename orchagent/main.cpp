@@ -210,9 +210,6 @@ int main(int argc, char **argv)
     attr.id = SAI_SWITCH_ATTR_FDB_EVENT_NOTIFY;
     attr.value.ptr = (void *)on_fdb_event;
     attrs.push_back(attr);
-    attr.id = SAI_SWITCH_ATTR_COUNTER_REFRESH_INTERVAL;
-    attr.value.u32 = 0;
-    attrs.push_back(attr);
 
 
     /* Disable/enable SwSS recording */
@@ -261,6 +258,11 @@ int main(int argc, char **argv)
         attr.value.s8list.list = (int8_t*)gAsicInstance;
         attrs.push_back(attr);
     }
+
+    attr.id = SAI_SWITCH_ATTR_COUNTER_REFRESH_INTERVAL;
+    attr.value.u32 = 0;
+    sai_switch_api->set_switch_attribute(gSwitchId, &attr);
+
 
     status = sai_switch_api->create_switch(&gSwitchId, (uint32_t)attrs.size(), attrs.data());
     if (status != SAI_STATUS_SUCCESS)

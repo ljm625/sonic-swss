@@ -259,11 +259,6 @@ int main(int argc, char **argv)
         attrs.push_back(attr);
     }
 
-    attr.id = SAI_SWITCH_ATTR_COUNTER_REFRESH_INTERVAL;
-    attr.value.u32 = 0;
-    sai_switch_api->set_switch_attribute(gSwitchId, &attr);
-
-
     status = sai_switch_api->create_switch(&gSwitchId, (uint32_t)attrs.size(), attrs.data());
     if (status != SAI_STATUS_SUCCESS)
     {
@@ -316,6 +311,12 @@ int main(int argc, char **argv)
             gIsNatSupported = true;
         }
     }
+    SWSS_LOG_NOTICE("Setting switch attribute SAI_SWITCH_ATTR_COUNTER_REFRESH_INTERVAL to 0");
+    sai_attribute_t attr_refresh;
+    attr_refresh.id = SAI_SWITCH_ATTR_COUNTER_REFRESH_INTERVAL;
+    attr_refresh.value.u32 = 0;
+    sai_switch_api->set_switch_attribute(gSwitchId, &attr_refresh);
+
 
     /* Create a loopback underlay router interface */
     vector<sai_attribute_t> underlay_intf_attrs;

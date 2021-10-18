@@ -10,6 +10,11 @@
 using namespace std;
 using namespace swss;
 
+#define SAI_SWITCH_ATTR_CUSTOM_RANGE_BASE SAI_SWITCH_ATTR_CUSTOM_RANGE_START
+#define SAI_SWITCH_ATTR_EXT_ECMP_HASH_OFFSET SAI_SWITCH_ATTR_CUSTOM_RANGE_START+3
+#define SAI_SWITCH_ATTR_EXT_LAG_HASH_OFFSET SAI_SWITCH_ATTR_CUSTOM_RANGE_START+3
+
+
 extern sai_object_id_t gSwitchId;
 extern sai_switch_api_t *sai_switch_api;
 extern MacAddress gVxlanMacAddress;
@@ -105,6 +110,16 @@ void SwitchOrch::doTask(Consumer &consumer)
                         mac_addr = value;
                         gVxlanMacAddress = mac_addr;
                         memcpy(attr.value.mac, mac_addr.getMac(), sizeof(sai_mac_t));
+                        break;
+
+                    case SAI_SWITCH_ATTR_EXT_ECMP_HASH_OFFSET:
+                        SWSS_LOG_NOTICE("Updating ECMP HASH OFFSET");
+                        attr.value.u8 = to_uint<uint8_t>(value);
+                        break;
+
+                    case SAI_SWITCH_ATTR_EXT_LAG_HASH_OFFSET:
+                        SWSS_LOG_NOTICE("Updating LAG HASH OFFSET");
+                        attr.value.u8 = to_uint<uint8_t>(value);
                         break;
 
                     default:

@@ -30,7 +30,7 @@ const map<string, sai_switch_attr_t> switch_attribute_map =
     {"vxlan_port",                          SAI_SWITCH_ATTR_VXLAN_DEFAULT_PORT},
     {"vxlan_router_mac",                    SAI_SWITCH_ATTR_VXLAN_DEFAULT_ROUTER_MAC},
     {"ecmp_hash_offset",                      SAI_SWITCH_ATTR_EXT_ECMP_HASH_OFFSET},
-    {"lag_hash_offset",                       SAI_SWITCH_ATTR_EXT_LAG_HASH_OFFSET},
+    {"lag_hash_offset",                       SAI_SWITCH_ATTR_EXT_LAG_HASH_OFFSET}
 
 };
 

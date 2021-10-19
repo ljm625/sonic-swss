@@ -32,6 +32,73 @@ const map<string, sai_switch_attr_t> switch_attribute_map =
 
 };
 
+
+typedef enum _sai_switch_attr_extensions_t
+{
+    /**
+     * @brief List of ACL Field list
+     *
+     * The value is of type sai_s32_list_t where each list member is of type
+     * sai_acl_table_attr_t. Only fields in the range SAI_ACL_TABLE_ATTR_FIELD_START
+     * and SAI_ACL_TABLE_ATTR_FIELD_END as well any custom SAI_ACL_TABLE_ATTR_FIELD
+     * are allowed. All other field types in sai_acl_table_attr_t are ignored.
+     *
+     * @type sai_s32_list_t
+     * @flags CREATE_ONLY
+     * @isvlan false
+     */
+    SAI_SWITCH_ATTR_EXT_ACL_FIELD_LIST = 0x10000000,
+
+    /**
+     * @brief Inject ECC error.
+     *
+     * When this value is set, ECC error initiate register will be set in HW.
+     * As a result, ECC error will be generated. This feature is for testing and debug purpose.
+     * If value is 1, 1 bit ECC error is generated and 2 for 2 bits error.
+     *
+     * @type sai_uint16_t
+     * @flags CREATE_AND_SET
+     * @isvlan false
+     */
+    SAI_SWITCH_ATTR_EXT_HW_ECC_ERROR_INITIATE,
+
+    /**
+     * @brief ECMP HASH offset.
+     *
+     * The value is of HASH offset value for ECMP.
+     *
+     * @type sai_uint8_t
+     * @flags CREATE_AND_SET
+     * @default 0
+     */
+    SAI_SWITCH_ATTR_EXT_ECMP_HASH_OFFSET,
+
+    /**
+     * @brief ECMP HASH offset.
+     *
+     * The value is of HASH offset value for LAG.
+     *
+     * @type sai_uint8_t
+     * @flags CREATE_AND_SET
+     * @default 0
+     */
+    SAI_SWITCH_ATTR_EXT_LAG_HASH_OFFSET,
+
+    /**
+     * @brief End of attributes
+     */
+    SAI_SWITCH_ATTR_EXT_END
+
+} sai_switch_attr_extensions_t;
+
+
+const map<string, sai_switch_attr_extensions_t> switch_attribute_ext_map =
+{
+    {"ecmp_hash_offset",                      SAI_SWITCH_ATTR_EXT_ECMP_HASH_OFFSET},
+    {"lag_hash_offset",                       SAI_SWITCH_ATTR_EXT_LAG_HASH_OFFSET}
+};
+
+
 const map<string, sai_packet_action_t> packet_action_map =
 {
     {"drop",    SAI_PACKET_ACTION_DROP},
@@ -66,17 +133,27 @@ void SwitchOrch::doTask(Consumer &consumer)
             for (auto i : kfvFieldsValues(t))
             {
                 auto attribute = fvField(i);
+                bool ext = false;
 
                 if (switch_attribute_map.find(attribute) == switch_attribute_map.end())
                 {
-                    SWSS_LOG_ERROR("Unsupported switch attribute %s", attribute.c_str());
-                    break;
+                    ext = true;
+                    if (switch_attribute_map.find(attribute) == switch_attribute_ext_map.end()){
+                        SWSS_LOG_ERROR("Unsupported switch attribute %s", attribute.c_str());
+                        break;
+                    }
                 }
 
                 auto value = fvValue(i);
 
                 sai_attribute_t attr;
-                attr.id = switch_attribute_map.at(attribute);
+                if(ext){
+                    attr.id = switch_attribute_ext_map.at(attribute);
+
+                }
+                else{
+                    attr.id = switch_attribute_map.at(attribute);
+                }
 
                 MacAddress mac_addr;
                 bool invalid_attr = false;

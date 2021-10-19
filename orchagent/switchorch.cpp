@@ -138,7 +138,7 @@ void SwitchOrch::doTask(Consumer &consumer)
                 if (switch_attribute_map.find(attribute) == switch_attribute_map.end())
                 {
                     ext = true;
-                    if (switch_attribute_map.find(attribute) == switch_attribute_ext_map.end()){
+                    if (switch_attribute_ext_map.find(attribute) == switch_attribute_ext_map.end()){
                         SWSS_LOG_ERROR("Unsupported switch attribute %s", attribute.c_str());
                         break;
                     }

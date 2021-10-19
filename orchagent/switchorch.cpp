@@ -28,7 +28,10 @@ const map<string, sai_switch_attr_t> switch_attribute_map =
     {"lag_hash_seed",                       SAI_SWITCH_ATTR_LAG_DEFAULT_HASH_SEED},
     {"fdb_aging_time",                      SAI_SWITCH_ATTR_FDB_AGING_TIME},
     {"vxlan_port",                          SAI_SWITCH_ATTR_VXLAN_DEFAULT_PORT},
-    {"vxlan_router_mac",                    SAI_SWITCH_ATTR_VXLAN_DEFAULT_ROUTER_MAC}
+    {"vxlan_router_mac",                    SAI_SWITCH_ATTR_VXLAN_DEFAULT_ROUTER_MAC},
+    {"ecmp_hash_offset",                      SAI_SWITCH_ATTR_EXT_ECMP_HASH_OFFSET},
+    {"lag_hash_offset",                       SAI_SWITCH_ATTR_EXT_LAG_HASH_OFFSET},
+
 };
 
 const map<string, sai_packet_action_t> packet_action_map =

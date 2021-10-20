@@ -6,7 +6,6 @@
 #include "notifier.h"
 #include "notificationproducer.h"
 #include "macaddress.h"
-#include "saiswitchextension.h"
 using namespace std;
 using namespace swss;
 

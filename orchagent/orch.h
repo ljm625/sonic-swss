@@ -10,6 +10,7 @@
 extern "C" {
 #include "sai.h"
 #include "saistatus.h"
+#include "saiswitchextension.h"
 }
 
 #include "dbconnector.h"

@@ -6,7 +6,7 @@
 #include "notifier.h"
 #include "notificationproducer.h"
 #include "macaddress.h"
-
+#include "saiswitchextension.h"
 using namespace std;
 using namespace swss;
 
@@ -28,66 +28,6 @@ const map<string, sai_switch_attr_t> switch_attribute_map =
     {"vxlan_port",                          SAI_SWITCH_ATTR_VXLAN_DEFAULT_PORT},
     {"vxlan_router_mac",                    SAI_SWITCH_ATTR_VXLAN_DEFAULT_ROUTER_MAC}
 };
-
-
-typedef enum _sai_switch_attr_extensions_t
-{
-    /**
-     * @brief List of ACL Field list
-     *
-     * The value is of type sai_s32_list_t where each list member is of type
-     * sai_acl_table_attr_t. Only fields in the range SAI_ACL_TABLE_ATTR_FIELD_START
-     * and SAI_ACL_TABLE_ATTR_FIELD_END as well any custom SAI_ACL_TABLE_ATTR_FIELD
-     * are allowed. All other field types in sai_acl_table_attr_t are ignored.
-     *
-     * @type sai_s32_list_t
-     * @flags CREATE_ONLY
-     * @isvlan false
-     */
-    SAI_SWITCH_ATTR_EXT_ACL_FIELD_LIST = 0x10000000,
-
-    /**
-     * @brief Inject ECC error.
-     *
-     * When this value is set, ECC error initiate register will be set in HW.
-     * As a result, ECC error will be generated. This feature is for testing and debug purpose.
-     * If value is 1, 1 bit ECC error is generated and 2 for 2 bits error.
-     *
-     * @type sai_uint16_t
-     * @flags CREATE_AND_SET
-     * @isvlan false
-     */
-    SAI_SWITCH_ATTR_EXT_HW_ECC_ERROR_INITIATE,
-
-    /**
-     * @brief ECMP HASH offset.
-     *
-     * The value is of HASH offset value for ECMP.
-     *
-     * @type sai_uint8_t
-     * @flags CREATE_AND_SET
-     * @default 0
-     */
-    SAI_SWITCH_ATTR_EXT_ECMP_HASH_OFFSET,
-
-    /**
-     * @brief ECMP HASH offset.
-     *
-     * The value is of HASH offset value for LAG.
-     *
-     * @type sai_uint8_t
-     * @flags CREATE_AND_SET
-     * @default 0
-     */
-    SAI_SWITCH_ATTR_EXT_LAG_HASH_OFFSET,
-
-    /**
-     * @brief End of attributes
-     */
-    SAI_SWITCH_ATTR_EXT_END
-
-} sai_switch_attr_extensions_t;
-
 
 const map<string, sai_switch_attr_extensions_t> switch_attribute_ext_map =
 {
@@ -207,6 +147,7 @@ void SwitchOrch::doTask(Consumer &consumer)
                     break;
                 }
 
+                SWSS_LOG_NOTICE("Try set switch attribute id to %d, value: %s", attr.id, value.c_str());
                 sai_status_t status = sai_switch_api->set_switch_attribute(gSwitchId, &attr);
                 if (status != SAI_STATUS_SUCCESS)
                 {
